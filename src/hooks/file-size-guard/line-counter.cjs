@@ -29,19 +29,50 @@ function isBinaryFile(filePath) {
 }
 
 /**
+ * Check if path is a regular file (not symlink, directory, etc.)
+ */
+function isRegularFile(filePath) {
+  try {
+    const stats = fs.lstatSync(filePath);
+    return stats.isFile();
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Count lines in a file (with optional content return for replace_all estimation)
+ * Handles edge cases: non-existent, binary, symlinks, encoding errors
+ *
+ * Note: For non-existent files, returns lines: 0, exists: false
+ * The hook uses estimateLinesForWrite() for new file content separately
  */
 function countLines(filePath, returnContent = false) {
   try {
+    // Check existence first
     if (!fs.existsSync(filePath)) {
       return { lines: 0, exists: false, isBinary: false, error: null, content: null };
+    }
+
+    // Skip non-regular files (symlinks, directories, etc.)
+    // Only check if file exists to avoid false positives
+    if (!isRegularFile(filePath)) {
+      return { lines: 0, exists: true, isBinary: false, error: 'not-regular-file', content: null };
     }
 
     if (isBinaryFile(filePath)) {
       return { lines: 0, exists: true, isBinary: true, error: null, content: null };
     }
 
-    const content = fs.readFileSync(filePath, 'utf-8');
+    // Read file with error handling for encoding issues
+    let content;
+    try {
+      content = fs.readFileSync(filePath, 'utf-8');
+    } catch (readError) {
+      // File might have encoding issues, treat as binary
+      return { lines: 0, exists: true, isBinary: true, error: 'encoding-error', content: null };
+    }
+
     const lines = content.split('\n').length;
 
     return {
@@ -101,5 +132,6 @@ module.exports = {
   countLines,
   estimateLinesAfterEdit,
   estimateLinesForWrite,
-  isBinaryFile
+  isBinaryFile,
+  isRegularFile
 };

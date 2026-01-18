@@ -98,8 +98,8 @@ function main() {
       process.exit(0);
     }
 
-    // Get threshold config
-    const config = getThresholdConfig(ckConfig);
+    // Get threshold config (use let for potential file-level override)
+    let config = getThresholdConfig(ckConfig);
 
     // Extract tool info
     const toolName = data.tool_name || '';

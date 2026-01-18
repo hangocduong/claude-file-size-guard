@@ -58,17 +58,30 @@ const DEFAULT_EXCLUDE_PATTERNS = [
  * Supports: // @file-size-guard: max-lines=500
  *           // @file-size-guard: disabled
  *           # @file-size-guard: max-lines=500  (Python/Shell)
+ *
+ * Optimized: Only reads first 4KB (enough for ~50 lines)
  */
 function getFileOverride(filePath) {
   try {
     if (!fs.existsSync(filePath)) return null;
 
-    // Read first 50 lines only (performance optimization)
-    const content = fs.readFileSync(filePath, 'utf-8');
-    const firstLines = content.split('\n').slice(0, 50).join('\n');
+    // Check if it's a regular file (not symlink, directory, etc.)
+    const stats = fs.lstatSync(filePath);
+    if (!stats.isFile()) return null;
+
+    // Read only first 4KB for performance (directive must be near top)
+    const fd = fs.openSync(filePath, 'r');
+    const buffer = Buffer.alloc(4096);
+    const bytesRead = fs.readSync(fd, buffer, 0, 4096, 0);
+    fs.closeSync(fd);
+
+    if (bytesRead === 0) return null;
+
+    // Convert buffer to string, handling potential encoding issues
+    const content = buffer.slice(0, bytesRead).toString('utf-8');
 
     // Match both // and # comment styles
-    const match = firstLines.match(/@file-size-guard:\s*(max-lines=(\d+)|disabled)/i);
+    const match = content.match(/@file-size-guard:\s*(max-lines=(\d+)|disabled)/i);
 
     if (match) {
       if (match[1].toLowerCase() === 'disabled') {
@@ -80,7 +93,7 @@ function getFileOverride(filePath) {
     }
     return null;
   } catch {
-    return null;
+    return null; // Fail-safe: return null on any error
   }
 }
 
@@ -124,18 +137,41 @@ function checkThreshold(lines, config = {}) {
 }
 
 /**
+ * Safely create RegExp from string, returns null if invalid
+ */
+function safeRegExp(pattern) {
+  try {
+    return new RegExp(pattern);
+  } catch {
+    return null; // Invalid regex, skip it
+  }
+}
+
+/**
  * Get threshold config from .ck.json
+ * Validates custom regex patterns to prevent crashes
  */
 function getThresholdConfig(ckConfig) {
   const fileSizeGuard = ckConfig?.fileSizeGuard || {};
 
+  // Parse custom exclude patterns with validation
+  let excludePatterns = DEFAULT_EXCLUDE_PATTERNS;
+  if (Array.isArray(fileSizeGuard.excludePatterns)) {
+    const customPatterns = fileSizeGuard.excludePatterns
+      .map(p => safeRegExp(p))
+      .filter(p => p !== null); // Remove invalid patterns
+    if (customPatterns.length > 0) {
+      excludePatterns = customPatterns;
+    }
+  }
+
   return {
     warnThreshold: fileSizeGuard.warnThreshold || DEFAULT_WARN_THRESHOLD,
     blockThreshold: fileSizeGuard.blockThreshold || DEFAULT_BLOCK_THRESHOLD,
-    excludePatterns: fileSizeGuard.excludePatterns
-      ? fileSizeGuard.excludePatterns.map(p => new RegExp(p))
-      : DEFAULT_EXCLUDE_PATTERNS,
-    whitelistPaths: fileSizeGuard.whitelistPaths || []
+    excludePatterns,
+    whitelistPaths: Array.isArray(fileSizeGuard.whitelistPaths)
+      ? fileSizeGuard.whitelistPaths
+      : []
   };
 }
 

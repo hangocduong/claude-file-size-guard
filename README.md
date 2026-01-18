@@ -1,6 +1,6 @@
 # Claude File Size Guard
 
-[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/hangocduong/claude-file-size-guard/releases)
+[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/hangocduong/claude-file-size-guard/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org)
 
@@ -215,6 +215,15 @@ cd claude-file-size-guard
 - **Claude Code** CLI or VS Code extension
 
 ## Changelog
+
+### v1.2.0 (2026-01-19)
+
+- Fixed `const` reassignment bug for file-level overrides
+- Optimized file reading (4KB buffer instead of full file)
+- Added symlink/directory protection
+- Added regex validation for custom exclude patterns
+- Added encoding error handling
+- Improved robustness and error handling
 
 ### v1.1.0 (2026-01-19)
 
