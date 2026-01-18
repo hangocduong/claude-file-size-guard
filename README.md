@@ -1,6 +1,6 @@
 # Claude File Size Guard
 
-[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/hangocduong/claude-file-size-guard/releases)
+[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](https://github.com/hangocduong/claude-file-size-guard/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org)
 
@@ -152,17 +152,22 @@ Already excluded (no config needed):
 # Check status
 ~/.claude/scripts/file-size-guard-toggle.sh status
 
-# Repair/update
+# Quick repair (re-registers hook)
+~/.claude/scripts/file-size-guard-toggle.sh repair
+
+# Full update (downloads latest version)
 curl -fsSL https://raw.githubusercontent.com/hangocduong/claude-file-size-guard/main/update.sh | bash
 ```
 
-### Auto-recovery (optional)
+### Auto-repair (Recommended)
 
-Add to `.bashrc` or `.zshrc`:
+Add to `.bashrc` or `.zshrc` to automatically repair after Claude Code/Kit updates:
 
 ```bash
-source ~/.claude/scripts/file-size-guard-recovery.sh
+source ~/.claude/scripts/file-size-guard-auto-repair.sh
 ```
+
+This runs silently in background on shell startup and only outputs when repair is needed.
 
 ## File Structure
 
@@ -175,9 +180,9 @@ source ~/.claude/scripts/file-size-guard-recovery.sh
 │       ├── threshold-checker.cjs        # Threshold & exclusion logic
 │       └── suggestion-generator.cjs     # Micro-extract suggestions
 ├── scripts/
-│   ├── file-size-guard-toggle.sh        # Enable/disable
-│   ├── file-size-guard-update.sh        # Update script
-│   └── file-size-guard-recovery.sh      # Auto-recovery
+│   ├── file-size-guard-toggle.sh        # Enable/disable/repair
+│   ├── file-size-guard-auto-repair.sh   # Self-healing for updates
+│   └── file-size-guard-recovery.sh      # Legacy recovery check
 ├── settings.json                         # Hook registration
 ├── .ck.json                              # Configuration
 └── backups/                              # Automatic backups
@@ -215,6 +220,13 @@ cd claude-file-size-guard
 - **Claude Code** CLI or VS Code extension
 
 ## Changelog
+
+### v1.3.0 (2026-01-19)
+
+- Added auto-repair system for Claude Code/Kit updates
+- Added `repair` command to toggle script
+- Self-healing shell integration (background, non-blocking)
+- Hook re-registers automatically when missing from settings.json
 
 ### v1.2.0 (2026-01-19)
 

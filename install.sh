@@ -16,7 +16,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 # Config
-VERSION="1.2.0"
+VERSION="1.3.0"
 REPO_URL="${REPO_URL:-https://github.com/hangocduong/claude-file-size-guard}"
 RAW_URL="${RAW_URL:-https://raw.githubusercontent.com/hangocduong/claude-file-size-guard/main}"
 CLAUDE_DIR="$HOME/.claude"
@@ -70,6 +70,7 @@ install_hooks() {
     cp "$SCRIPT_DIR/src/hooks/file-size-guard.cjs" "$HOOKS_DIR/"
     cp "$SCRIPT_DIR/src/hooks/file-size-guard/"*.cjs "$HOOKS_DIR/file-size-guard/"
     cp "$SCRIPT_DIR/src/scripts/file-size-guard-toggle.sh" "$SCRIPTS_DIR/"
+    cp "$SCRIPT_DIR/src/scripts/file-size-guard-auto-repair.sh" "$SCRIPTS_DIR/"
   else
     echo "  Downloading from $RAW_URL..."
     curl -fsSL "$RAW_URL/src/hooks/file-size-guard.cjs" -o "$HOOKS_DIR/file-size-guard.cjs"
@@ -77,8 +78,10 @@ install_hooks() {
     curl -fsSL "$RAW_URL/src/hooks/file-size-guard/threshold-checker.cjs" -o "$HOOKS_DIR/file-size-guard/threshold-checker.cjs"
     curl -fsSL "$RAW_URL/src/hooks/file-size-guard/suggestion-generator.cjs" -o "$HOOKS_DIR/file-size-guard/suggestion-generator.cjs"
     curl -fsSL "$RAW_URL/src/scripts/file-size-guard-toggle.sh" -o "$SCRIPTS_DIR/file-size-guard-toggle.sh"
+    curl -fsSL "$RAW_URL/src/scripts/file-size-guard-auto-repair.sh" -o "$SCRIPTS_DIR/file-size-guard-auto-repair.sh"
   fi
   chmod +x "$SCRIPTS_DIR/file-size-guard-toggle.sh"
+  chmod +x "$SCRIPTS_DIR/file-size-guard-auto-repair.sh"
   echo -e "${GREEN}✓${NC} Hooks installed"
 }
 
@@ -132,7 +135,9 @@ if (!c.fileSizeGuard) {
 }
 
 install_recovery() {
-  echo -e "\n${BLUE}Installing recovery script...${NC}"
+  echo -e "\n${BLUE}Installing auto-repair system...${NC}"
+
+  # Legacy recovery script (basic check)
   cat > "$SCRIPTS_DIR/file-size-guard-recovery.sh" << 'EOF'
 #!/bin/bash
 # Auto-recovery check for file-size-guard
@@ -142,7 +147,9 @@ SETTINGS_FILE="$HOME/.claude/settings.json"
 grep -q "file-size-guard.cjs" "$SETTINGS_FILE" 2>/dev/null || echo "[file-size-guard] Not registered"
 EOF
   chmod +x "$SCRIPTS_DIR/file-size-guard-recovery.sh"
-  echo -e "${GREEN}✓${NC} Recovery script installed"
+
+  # Auto-repair is already installed by install_hooks()
+  echo -e "${GREEN}✓${NC} Auto-repair system installed"
 }
 
 print_summary() {
@@ -156,6 +163,11 @@ print_summary() {
   echo "  ~/.claude/scripts/file-size-guard-toggle.sh status"
   echo "  ~/.claude/scripts/file-size-guard-toggle.sh disable"
   echo "  ~/.claude/scripts/file-size-guard-toggle.sh enable"
+  echo "  ~/.claude/scripts/file-size-guard-toggle.sh repair"
+  echo ""
+  echo -e "${YELLOW}Optional: Survive Claude Code/Kit updates${NC}"
+  echo "Add to ~/.bashrc or ~/.zshrc:"
+  echo "  source ~/.claude/scripts/file-size-guard-auto-repair.sh"
   echo ""
   echo -e "${YELLOW}Start new Claude session to activate.${NC}"
 }
