@@ -4,8 +4,14 @@
  * Thresholds:
  * - warnThreshold (default 120): Inject warning, suggest micro-extract
  * - blockThreshold (default 200): Block operation, require refactor first
+ *
+ * File-level overrides (inline comments):
+ * - // @file-size-guard: max-lines=500
+ * - // @file-size-guard: disabled
+ * - # @file-size-guard: max-lines=500  (for Python/Shell)
  */
 
+const fs = require('fs');
 const path = require('path');
 
 // Default thresholds
@@ -38,8 +44,58 @@ const DEFAULT_EXCLUDE_PATTERNS = [
   /\.txt$/,
   /__fixtures__\//,
   /__snapshots__\//,
-  /\.snap$/
+  /\.snap$/,
+  // Test file patterns
+  /\.test\.(ts|tsx|js|jsx|mjs|cjs)$/,
+  /\.spec\.(ts|tsx|js|jsx|mjs|cjs)$/,
+  /_test\.go$/,
+  /test_.*\.py$/,
+  /.*_test\.py$/
 ];
+
+/**
+ * Parse file-level override from inline comment
+ * Supports: // @file-size-guard: max-lines=500
+ *           // @file-size-guard: disabled
+ *           # @file-size-guard: max-lines=500  (Python/Shell)
+ */
+function getFileOverride(filePath) {
+  try {
+    if (!fs.existsSync(filePath)) return null;
+
+    // Read first 50 lines only (performance optimization)
+    const content = fs.readFileSync(filePath, 'utf-8');
+    const firstLines = content.split('\n').slice(0, 50).join('\n');
+
+    // Match both // and # comment styles
+    const match = firstLines.match(/@file-size-guard:\s*(max-lines=(\d+)|disabled)/i);
+
+    if (match) {
+      if (match[1].toLowerCase() === 'disabled') {
+        return { disabled: true };
+      }
+      if (match[2]) {
+        return { maxLines: parseInt(match[2], 10) };
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Check if file path matches any whitelist pattern
+ */
+function isWhitelisted(filePath, whitelistPaths = []) {
+  if (!whitelistPaths.length) return false;
+  const normalizedPath = filePath.replace(/\\/g, '/');
+  return whitelistPaths.some(pattern => {
+    // Support glob-like patterns (simple prefix match)
+    const normalizedPattern = pattern.replace(/\\/g, '/');
+    return normalizedPath.includes(normalizedPattern);
+  });
+}
 
 /**
  * Check if file should be excluded from size checks
@@ -78,7 +134,8 @@ function getThresholdConfig(ckConfig) {
     blockThreshold: fileSizeGuard.blockThreshold || DEFAULT_BLOCK_THRESHOLD,
     excludePatterns: fileSizeGuard.excludePatterns
       ? fileSizeGuard.excludePatterns.map(p => new RegExp(p))
-      : DEFAULT_EXCLUDE_PATTERNS
+      : DEFAULT_EXCLUDE_PATTERNS,
+    whitelistPaths: fileSizeGuard.whitelistPaths || []
   };
 }
 
@@ -86,6 +143,8 @@ module.exports = {
   checkThreshold,
   shouldExclude,
   getThresholdConfig,
+  getFileOverride,
+  isWhitelisted,
   DEFAULT_WARN_THRESHOLD,
   DEFAULT_BLOCK_THRESHOLD,
   DEFAULT_EXCLUDE_PATTERNS

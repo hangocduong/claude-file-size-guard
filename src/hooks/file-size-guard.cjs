@@ -35,7 +35,7 @@ const path = require('path');
 const os = require('os');
 
 const { countLines, estimateLinesAfterEdit, estimateLinesForWrite } = require('./file-size-guard/line-counter.cjs');
-const { checkThreshold, shouldExclude, getThresholdConfig } = require('./file-size-guard/threshold-checker.cjs');
+const { checkThreshold, shouldExclude, getThresholdConfig, getFileOverride, isWhitelisted } = require('./file-size-guard/threshold-checker.cjs');
 const { formatWarningMessage, formatBlockMessage } = require('./file-size-guard/suggestion-generator.cjs');
 
 /**
@@ -117,7 +117,8 @@ function main() {
       const result = estimateLinesAfterEdit(
         filePath,
         toolInput.old_string || '',
-        toolInput.new_string || ''
+        toolInput.new_string || '',
+        toolInput.replace_all || false
       );
       currentLines = result.currentLines;
       estimatedLines = result.estimatedLines;
@@ -139,6 +140,27 @@ function main() {
     // Check exclusions
     if (shouldExclude(filePath, config.excludePatterns)) {
       process.exit(0);
+    }
+
+    // Check whitelist paths (from config)
+    if (isWhitelisted(filePath, config.whitelistPaths)) {
+      process.exit(0);
+    }
+
+    // Check file-level override (inline comment)
+    const fileOverride = getFileOverride(filePath);
+    if (fileOverride) {
+      if (fileOverride.disabled) {
+        process.exit(0); // File has @file-size-guard: disabled
+      }
+      if (fileOverride.maxLines) {
+        // Use file-specific max-lines as block threshold
+        config = {
+          ...config,
+          warnThreshold: Math.min(config.warnThreshold, fileOverride.maxLines - 30),
+          blockThreshold: fileOverride.maxLines
+        };
+      }
     }
 
     // Check thresholds
