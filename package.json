@@ -1,0 +1,32 @@
+{
+  "name": "claude-file-size-guard",
+  "version": "1.0.0",
+  "description": "Claude Code hook to prevent large files by enforcing micro-extract pattern",
+  "main": "src/hooks/file-size-guard.cjs",
+  "scripts": {
+    "test": "node tests/hook-test.js",
+    "install-local": "./install.sh",
+    "uninstall-local": "./uninstall.sh"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "hook",
+    "code-quality",
+    "modular",
+    "file-size"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hangocduong/claude-file-size-guard.git"
+  },
+  "bugs": {
+    "url": "https://github.com/hangocduong/claude-file-size-guard/issues"
+  },
+  "homepage": "https://github.com/hangocduong/claude-file-size-guard#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

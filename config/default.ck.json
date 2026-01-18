@@ -1,0 +1,28 @@
+{
+  "fileSizeGuard": {
+    "enabled": true,
+    "warnThreshold": 120,
+    "blockThreshold": 200,
+    "excludePatterns": [
+      "package-lock\\.json$",
+      "pnpm-lock\\.yaml$",
+      "yarn\\.lock$",
+      "Cargo\\.lock$",
+      "\\.min\\.(js|css)$",
+      "\\.generated\\.",
+      "\\.d\\.ts$",
+      "\\.config\\.(js|ts|cjs|mjs)$",
+      "tsconfig.*\\.json$",
+      "\\.json$",
+      "\\.yaml$",
+      "\\.yml$",
+      "\\.md$",
+      "\\.mdx$",
+      "__fixtures__/",
+      "__snapshots__/",
+      "\\.snap$",
+      "\\.test\\.(ts|tsx|js|jsx)$",
+      "\\.spec\\.(ts|tsx|js|jsx)$"
+    ]
+  }
+}

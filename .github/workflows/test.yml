@@ -1,0 +1,84 @@
+name: Test File Size Guard
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        node: [18, 20, 22]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Create mock Claude directory
+        run: mkdir -p ~/.claude/hooks ~/.claude/scripts
+
+      - name: Run install script
+        run: |
+          chmod +x install.sh
+          ./install.sh
+
+      - name: Verify installation
+        run: |
+          # Check files exist
+          test -f ~/.claude/hooks/file-size-guard.cjs
+          test -f ~/.claude/hooks/file-size-guard/line-counter.cjs
+          test -f ~/.claude/hooks/file-size-guard/threshold-checker.cjs
+          test -f ~/.claude/hooks/file-size-guard/suggestion-generator.cjs
+          test -f ~/.claude/scripts/file-size-guard-toggle.sh
+
+          # Check hook is registered
+          grep -q "file-size-guard.cjs" ~/.claude/settings.json
+
+          echo "✓ All files installed correctly"
+
+      - name: Test toggle commands
+        run: |
+          ~/.claude/scripts/file-size-guard-toggle.sh status
+          ~/.claude/scripts/file-size-guard-toggle.sh disable
+          ~/.claude/scripts/file-size-guard-toggle.sh status
+          ~/.claude/scripts/file-size-guard-toggle.sh enable
+          ~/.claude/scripts/file-size-guard-toggle.sh status
+
+      - name: Test hook with mock input (under threshold)
+        run: |
+          echo '{"tool_name":"Write","tool_input":{"file_path":"/tmp/test.js","content":"const x = 1;"}}' | \
+            node ~/.claude/hooks/file-size-guard.cjs
+          echo "✓ Small file allowed"
+
+      - name: Test hook with mock input (over threshold)
+        run: |
+          # Generate 250 lines
+          CONTENT=$(printf 'line %s\n' $(seq 1 250))
+          echo "{\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\"/tmp/big.js\",\"content\":\"$CONTENT\"}}" | \
+            node ~/.claude/hooks/file-size-guard.cjs && exit 1 || true
+          echo "✓ Large file blocked correctly"
+
+      - name: Test uninstall
+        run: |
+          chmod +x uninstall.sh
+          ./uninstall.sh
+          test ! -f ~/.claude/hooks/file-size-guard.cjs
+          echo "✓ Uninstall successful"
+
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: '.'
+          severity: warning
