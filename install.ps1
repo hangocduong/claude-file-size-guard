@@ -11,7 +11,7 @@
 $ErrorActionPreference = "Stop"
 
 # Config
-$Version = "1.3.0"
+$Version = "1.4.0"
 $RepoUrl = if ($env:REPO_URL) { $env:REPO_URL } else { "https://github.com/hangocduong/claude-file-size-guard" }
 $RawUrl = if ($env:RAW_URL) { $env:RAW_URL } else { "https://raw.githubusercontent.com/hangocduong/claude-file-size-guard/main" }
 $ClaudeDir = "$env:USERPROFILE\.claude"
