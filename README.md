@@ -1,6 +1,6 @@
 # Claude File Size Guard
 
-[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](https://github.com/hangocduong/claude-file-size-guard/releases)
+[![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)](https://github.com/hangocduong/claude-file-size-guard/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org)
 
@@ -10,8 +10,16 @@ A Claude Code hook that enforces modular code from the start by warning or block
 
 ## Quick Install
 
+### macOS / Linux
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/hangocduong/claude-file-size-guard/main/install.sh | bash
+```
+
+### Windows (PowerShell)
+
+```powershell
+irm https://raw.githubusercontent.com/hangocduong/claude-file-size-guard/main/install.ps1 | iex
 ```
 
 **That's it!** Restart Claude Code to activate.
@@ -49,7 +57,7 @@ Extract NEW code to NEW files from the beginning:
 
 ## Usage
 
-### Quick Commands
+### Quick Commands (macOS/Linux)
 
 ```bash
 # Check status
@@ -66,6 +74,22 @@ curl -fsSL https://raw.githubusercontent.com/hangocduong/claude-file-size-guard/
 
 # Uninstall
 curl -fsSL https://raw.githubusercontent.com/hangocduong/claude-file-size-guard/main/uninstall.sh | bash
+```
+
+### Quick Commands (Windows PowerShell)
+
+```powershell
+# Check status
+& $env:USERPROFILE\.claude\scripts\file-size-guard-toggle.ps1 status
+
+# Disable temporarily
+& $env:USERPROFILE\.claude\scripts\file-size-guard-toggle.ps1 disable
+
+# Re-enable
+& $env:USERPROFILE\.claude\scripts\file-size-guard-toggle.ps1 enable
+
+# Repair after update
+& $env:USERPROFILE\.claude\scripts\file-size-guard-toggle.ps1 repair
 ```
 
 ### File-Level Overrides
@@ -148,6 +172,8 @@ Already excluded (no config needed):
 
 ### Hook stopped working after Claude Code update?
 
+**macOS/Linux:**
+
 ```bash
 # Check status
 ~/.claude/scripts/file-size-guard-toggle.sh status
@@ -159,20 +185,38 @@ Already excluded (no config needed):
 curl -fsSL https://raw.githubusercontent.com/hangocduong/claude-file-size-guard/main/update.sh | bash
 ```
 
+**Windows PowerShell:**
+
+```powershell
+# Check status
+& $env:USERPROFILE\.claude\scripts\file-size-guard-toggle.ps1 status
+
+# Quick repair (re-registers hook)
+& $env:USERPROFILE\.claude\scripts\file-size-guard-toggle.ps1 repair
+```
+
 ### Auto-repair (Recommended)
 
-Add to `.bashrc` or `.zshrc` to automatically repair after Claude Code/Kit updates:
+**macOS/Linux** - Add to `.bashrc` or `.zshrc`:
 
 ```bash
 source ~/.claude/scripts/file-size-guard-auto-repair.sh
+```
+
+**Windows** - Add to PowerShell profile (`$PROFILE`):
+
+```powershell
+. $env:USERPROFILE\.claude\scripts\file-size-guard-auto-repair.ps1
 ```
 
 This runs silently in background on shell startup and only outputs when repair is needed.
 
 ## File Structure
 
+**macOS/Linux:** `~/.claude/` | **Windows:** `%USERPROFILE%\.claude\`
+
 ```
-~/.claude/
+.claude/
 ├── hooks/
 │   ├── file-size-guard.cjs              # Main hook entry
 │   └── file-size-guard/
@@ -180,8 +224,10 @@ This runs silently in background on shell startup and only outputs when repair i
 │       ├── threshold-checker.cjs        # Threshold & exclusion logic
 │       └── suggestion-generator.cjs     # Micro-extract suggestions
 ├── scripts/
-│   ├── file-size-guard-toggle.sh        # Enable/disable/repair
-│   ├── file-size-guard-auto-repair.sh   # Self-healing for updates
+│   ├── file-size-guard-toggle.sh        # (macOS/Linux) Enable/disable/repair
+│   ├── file-size-guard-toggle.ps1       # (Windows) Enable/disable/repair
+│   ├── file-size-guard-auto-repair.sh   # (macOS/Linux) Self-healing
+│   ├── file-size-guard-auto-repair.ps1  # (Windows) Self-healing
 │   └── file-size-guard-recovery.sh      # Legacy recovery check
 ├── settings.json                         # Hook registration
 ├── .ck.json                              # Configuration
@@ -190,7 +236,7 @@ This runs silently in background on shell startup and only outputs when repair i
 
 ## Alternative Installation
 
-### From source
+### From source (macOS/Linux)
 
 ```bash
 git clone https://github.com/hangocduong/claude-file-size-guard.git
@@ -198,11 +244,25 @@ cd claude-file-size-guard
 ./install.sh
 ```
 
+### From source (Windows)
+
+```powershell
+git clone https://github.com/hangocduong/claude-file-size-guard.git
+cd claude-file-size-guard
+.\install.ps1
+```
+
 ### Manual
 
-1. Copy `src/hooks/` to `~/.claude/hooks/`
-2. Copy `src/scripts/` to `~/.claude/scripts/`
-3. Register hook in `~/.claude/settings.json`:
+1. Copy `src/hooks/` to:
+   - macOS/Linux: `~/.claude/hooks/`
+   - Windows: `%USERPROFILE%\.claude\hooks\`
+2. Copy `src/scripts/` to:
+   - macOS/Linux: `~/.claude/scripts/`
+   - Windows: `%USERPROFILE%\.claude\scripts\`
+3. Register hook in settings.json:
+
+   **macOS/Linux** (`~/.claude/settings.json`):
    ```json
    {
      "hooks": {
@@ -214,12 +274,32 @@ cd claude-file-size-guard
    }
    ```
 
+   **Windows** (`%USERPROFILE%\.claude\settings.json`):
+   ```json
+   {
+     "hooks": {
+       "PreToolUse": [{
+         "matcher": "Edit|Write",
+         "hooks": [{"type": "command", "command": "node %USERPROFILE%\\.claude\\hooks\\file-size-guard.cjs"}]
+       }]
+     }
+   }
+   ```
+
 ## Requirements
 
 - **Node.js** >= 18.0.0
 - **Claude Code** CLI or VS Code extension
 
 ## Changelog
+
+### v1.4.0 (2026-01-19)
+
+- Added Windows support with PowerShell scripts
+- install.ps1 for Windows installation
+- file-size-guard-toggle.ps1 for enable/disable/repair
+- file-size-guard-auto-repair.ps1 for self-healing on Windows
+- Updated documentation for cross-platform usage
 
 ### v1.3.0 (2026-01-19)
 
