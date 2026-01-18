@@ -21,6 +21,9 @@ After:  150-line file + import = 151-line file + 80-line new module
 - **Language-specific suggestions** - Tailored advice for JS/TS, Python, Rust
 - **Easy toggle** - Enable/disable without uninstalling
 - **Auto-recovery** - Repairs broken installations after updates
+- **File-level overrides** - Custom limits via inline comments
+- **Whitelist paths** - Exclude specific files/directories from checks
+- **`replace_all` aware** - Accurate estimation for multi-replacement edits
 
 ## Installation
 
@@ -81,6 +84,10 @@ Edit `~/.claude/.ck.json`:
       "\\.json$",
       "\\.md$",
       "\\.test\\.(ts|js)$"
+    ],
+    "whitelistPaths": [
+      "src/generated/",
+      "src/protocols/parser.ts"
     ]
   }
 }
@@ -94,6 +101,25 @@ Edit `~/.claude/.ck.json`:
 | `warnThreshold` | `120` | Lines before warning |
 | `blockThreshold` | `200` | Lines before blocking |
 | `excludePatterns` | (see below) | Regex patterns to skip |
+| `whitelistPaths` | `[]` | Specific paths to skip |
+
+### File-Level Overrides
+
+Add inline comments to override thresholds for specific files:
+
+```javascript
+// @file-size-guard: max-lines=500
+// This file can have up to 500 lines
+
+// @file-size-guard: disabled
+// This file has no size limit
+```
+
+For Python/Shell files:
+
+```python
+# @file-size-guard: max-lines=400
+```
 
 ### Default Exclusions
 
@@ -102,7 +128,8 @@ Edit `~/.claude/.ck.json`:
 - Configs: `*.config.js`, `tsconfig.json`, etc.
 - Data: `.json`, `.yaml`, `.yml`
 - Docs: `.md`, `.mdx`, `.txt`
-- Tests: `__fixtures__/`, `__snapshots__/`, `.snap`
+- Test fixtures: `__fixtures__/`, `__snapshots__/`, `.snap`
+- Test files: `.test.ts`, `.spec.js`, `_test.go`, `test_*.py`
 - Shell: `.sh`
 
 ## How It Works
