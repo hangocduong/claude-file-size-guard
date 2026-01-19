@@ -16,8 +16,6 @@
   HOOKS_DIR="$CLAUDE_DIR/hooks"
   SETTINGS_FILE="$CLAUDE_DIR/settings.json"
   HOOK_COMMAND='node $HOME/.claude/hooks/file-size-guard.cjs'
-  # shellcheck disable=SC2034
-  REPAIR_NEEDED=false
 
   # Check if hook files exist
   check_files() {
@@ -83,7 +81,6 @@ if (!hookExists) {
   # Main check
   if check_files; then
     if ! check_registration; then
-      REPAIR_NEEDED=true
       register_hook
     fi
   fi
