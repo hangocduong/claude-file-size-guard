@@ -60,10 +60,12 @@ jobs:
 
       - name: Test hook with mock input (over threshold)
         run: |
-          # Generate 250 lines
-          CONTENT=$(printf 'line %s\n' $(seq 1 250))
-          echo "{\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\"/tmp/big.js\",\"content\":\"$CONTENT\"}}" | \
-            node ~/.claude/hooks/file-size-guard.cjs && exit 1 || true
+          # Generate 250 lines - use node to create valid JSON with multiline content
+          node -e "
+            const lines = Array.from({length: 250}, (_, i) => 'line ' + (i+1)).join('\n');
+            const json = JSON.stringify({tool_name:'Write',tool_input:{file_path:'/tmp/big.js',content:lines}});
+            console.log(json);
+          " | node ~/.claude/hooks/file-size-guard.cjs && exit 1 || true
           echo "✓ Large file blocked correctly"
 
       - name: Test uninstall
