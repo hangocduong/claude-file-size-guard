@@ -63,6 +63,12 @@ Extract NEW code to NEW files from the beginning:
 # Check status
 ~/.claude/scripts/file-size-guard-toggle.sh status
 
+# Verify installation (check all files exist)
+~/.claude/scripts/file-size-guard-toggle.sh verify
+
+# Repair (download missing files + re-register)
+~/.claude/scripts/file-size-guard-toggle.sh repair
+
 # Disable temporarily
 ~/.claude/scripts/file-size-guard-toggle.sh disable
 
@@ -82,14 +88,17 @@ curl -fsSL https://raw.githubusercontent.com/hangocduong/claude-file-size-guard/
 # Check status
 & $env:USERPROFILE\.claude\scripts\file-size-guard-toggle.ps1 status
 
+# Verify installation
+& $env:USERPROFILE\.claude\scripts\file-size-guard-toggle.ps1 verify
+
+# Repair (download missing files + re-register)
+& $env:USERPROFILE\.claude\scripts\file-size-guard-toggle.ps1 repair
+
 # Disable temporarily
 & $env:USERPROFILE\.claude\scripts\file-size-guard-toggle.ps1 disable
 
 # Re-enable
 & $env:USERPROFILE\.claude\scripts\file-size-guard-toggle.ps1 enable
-
-# Repair after update
-& $env:USERPROFILE\.claude\scripts\file-size-guard-toggle.ps1 repair
 ```
 
 ### File-Level Overrides
