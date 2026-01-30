@@ -16,7 +16,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 # Config
-VERSION="1.4.0"
+VERSION="1.5.0"
 REPO_URL="${REPO_URL:-https://github.com/hangocduong/claude-file-size-guard}"
 RAW_URL="${RAW_URL:-https://raw.githubusercontent.com/hangocduong/claude-file-size-guard/main}"
 CLAUDE_DIR="$HOME/.claude"
