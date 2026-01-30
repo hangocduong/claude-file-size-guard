@@ -136,20 +136,48 @@ if (!c.fileSizeGuard) {
 
 install_recovery() {
   echo -e "\n${BLUE}Installing auto-repair system...${NC}"
-
-  # Legacy recovery script (basic check)
-  cat > "$SCRIPTS_DIR/file-size-guard-recovery.sh" << 'EOF'
-#!/bin/bash
-# Auto-recovery check for file-size-guard
-HOOKS_DIR="$HOME/.claude/hooks"
-SETTINGS_FILE="$HOME/.claude/settings.json"
-[ ! -f "$HOOKS_DIR/file-size-guard.cjs" ] && echo "[file-size-guard] Hook missing - reinstall needed"
-grep -q "file-size-guard.cjs" "$SETTINGS_FILE" 2>/dev/null || echo "[file-size-guard] Not registered"
-EOF
-  chmod +x "$SCRIPTS_DIR/file-size-guard-recovery.sh"
-
   # Auto-repair is already installed by install_hooks()
   echo -e "${GREEN}✓${NC} Auto-repair system installed"
+}
+
+verify_installation() {
+  echo -e "\n${BLUE}Verifying installation...${NC}"
+  local errors=0
+
+  # Check main hook file
+  if [ ! -f "$HOOKS_DIR/file-size-guard.cjs" ]; then
+    echo -e "${RED}✗${NC} Missing: file-size-guard.cjs"
+    errors=$((errors + 1))
+  fi
+
+  # Check module files
+  for module in line-counter threshold-checker suggestion-generator; do
+    if [ ! -f "$HOOKS_DIR/file-size-guard/${module}.cjs" ]; then
+      echo -e "${RED}✗${NC} Missing: file-size-guard/${module}.cjs"
+      errors=$((errors + 1))
+    fi
+  done
+
+  # Check scripts
+  if [ ! -f "$SCRIPTS_DIR/file-size-guard-toggle.sh" ]; then
+    echo -e "${RED}✗${NC} Missing: file-size-guard-toggle.sh"
+    errors=$((errors + 1))
+  fi
+
+  # Check registration
+  if ! grep -q "file-size-guard.cjs" "$SETTINGS_FILE" 2>/dev/null; then
+    echo -e "${RED}✗${NC} Hook not registered in settings.json"
+    errors=$((errors + 1))
+  fi
+
+  if [ $errors -eq 0 ]; then
+    echo -e "${GREEN}✓${NC} All files verified"
+    return 0
+  else
+    echo -e "${RED}✗${NC} Installation incomplete ($errors errors)"
+    echo -e "${YELLOW}Try running the installer again${NC}"
+    return 1
+  fi
 }
 
 print_summary() {
@@ -181,6 +209,7 @@ main() {
   register_hook
   configure_ck
   install_recovery
+  verify_installation || exit 1
   print_summary
 }
 

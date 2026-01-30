@@ -1,6 +1,6 @@
 #!/bin/bash
 # Toggle file-size-guard hook on/off
-# Usage: ./file-size-guard-toggle.sh [enable|disable|status|repair]
+# Usage: ./file-size-guard-toggle.sh [enable|disable|status|repair|verify]
 
 set -e
 
@@ -8,7 +8,9 @@ CLAUDE_DIR="$HOME/.claude"
 CK_CONFIG="${CK_CONFIG:-$CLAUDE_DIR/.ck.json}"
 SETTINGS_FILE="$CLAUDE_DIR/settings.json"
 HOOKS_DIR="$CLAUDE_DIR/hooks"
+SCRIPTS_DIR="$CLAUDE_DIR/scripts"
 HOOK_COMMAND='node $HOME/.claude/hooks/file-size-guard.cjs'
+RAW_URL="https://raw.githubusercontent.com/hangocduong/claude-file-size-guard/main"
 
 # Ensure config file exists
 ensure_config() {
@@ -103,11 +105,15 @@ case "$1" in
     ;;
   repair)
     echo "=== Repairing file-size-guard ==="
-    # Check files first
-    if [ ! -f "$HOOKS_DIR/file-size-guard.cjs" ]; then
-      echo "❌ Hook files missing. Please reinstall:"
-      echo "   curl -fsSL https://raw.githubusercontent.com/hangocduong/claude-file-size-guard/main/install.sh | bash"
-      exit 1
+    # Check and restore files if missing
+    if [ ! -f "$HOOKS_DIR/file-size-guard.cjs" ] || [ ! -d "$HOOKS_DIR/file-size-guard" ]; then
+      echo "📥 Downloading missing files..."
+      mkdir -p "$HOOKS_DIR/file-size-guard" "$SCRIPTS_DIR"
+      curl -fsSL "$RAW_URL/src/hooks/file-size-guard.cjs" -o "$HOOKS_DIR/file-size-guard.cjs"
+      curl -fsSL "$RAW_URL/src/hooks/file-size-guard/line-counter.cjs" -o "$HOOKS_DIR/file-size-guard/line-counter.cjs"
+      curl -fsSL "$RAW_URL/src/hooks/file-size-guard/threshold-checker.cjs" -o "$HOOKS_DIR/file-size-guard/threshold-checker.cjs"
+      curl -fsSL "$RAW_URL/src/hooks/file-size-guard/suggestion-generator.cjs" -o "$HOOKS_DIR/file-size-guard/suggestion-generator.cjs"
+      echo "✅ Files restored"
     fi
     # Register hook
     register_hook
@@ -124,14 +130,55 @@ case "$1" in
     "
     echo "✅ Repair complete. Restart Claude Code to apply."
     ;;
+  verify)
+    echo "=== Verifying file-size-guard installation ==="
+    errors=0
+    # Check main hook
+    if [ -f "$HOOKS_DIR/file-size-guard.cjs" ]; then
+      echo "✅ file-size-guard.cjs"
+    else
+      echo "❌ file-size-guard.cjs MISSING"
+      errors=$((errors + 1))
+    fi
+    # Check modules
+    for module in line-counter threshold-checker suggestion-generator; do
+      if [ -f "$HOOKS_DIR/file-size-guard/${module}.cjs" ]; then
+        echo "✅ file-size-guard/${module}.cjs"
+      else
+        echo "❌ file-size-guard/${module}.cjs MISSING"
+        errors=$((errors + 1))
+      fi
+    done
+    # Check toggle script
+    if [ -f "$SCRIPTS_DIR/file-size-guard-toggle.sh" ]; then
+      echo "✅ file-size-guard-toggle.sh"
+    else
+      echo "❌ file-size-guard-toggle.sh MISSING"
+      errors=$((errors + 1))
+    fi
+    # Check registration
+    if check_registration; then
+      echo "✅ Registered in settings.json"
+    else
+      echo "❌ NOT registered in settings.json"
+      errors=$((errors + 1))
+    fi
+    echo ""
+    if [ $errors -eq 0 ]; then
+      echo "✅ Installation verified - all files present"
+    else
+      echo "❌ $errors error(s) found. Run 'repair' to fix."
+    fi
+    ;;
   *)
-    echo "Usage: $0 [enable|disable|status|repair]"
+    echo "Usage: $0 [enable|disable|status|repair|verify]"
     echo ""
     echo "Commands:"
     echo "  enable   - Enable file size guard"
     echo "  disable  - Disable file size guard (temporary)"
-    echo "  status   - Show current status and registration"
-    echo "  repair   - Re-register hook after Claude Code/Kit update"
+    echo "  status   - Show current status and thresholds"
+    echo "  repair   - Fix missing files and re-register hook"
+    echo "  verify   - Check all files exist and are registered"
     exit 1
     ;;
 esac
